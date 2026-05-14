@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { aiAPI } from '../services/api';
 import AIResultDisplay from '../components/AIResultDisplay';
+import StructuredAIDisplay from '../components/StructuredAIDisplay';
 import { toast } from 'react-toastify';
 
 const aiFeatures = {
@@ -163,7 +164,11 @@ export default function AIPage() {
         </form>
       </div>
 
-      <AIResultDisplay result={result} loading={loading} />
+      {result?.structured ? (
+        <StructuredAIDisplay result={result} feature={feature} loading={loading} />
+      ) : (
+        <AIResultDisplay result={result} loading={loading} />
+      )}
     </div>
   );
 }

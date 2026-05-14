@@ -5,8 +5,15 @@ const router = express.Router();
 
 router.get('/', auth, async (req, res) => {
   try {
-    const items = await MusicCatalog.findAll({ order: [['createdAt', 'DESC']] });
-    res.json(items);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 20);
+    const offset = (page - 1) * limit;
+    const { count, rows } = await MusicCatalog.findAndCountAll({
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset
+    });
+    res.json({ data: rows, page, limit, total: count, totalPages: Math.ceil(count / limit) });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
@@ -20,6 +27,9 @@ router.get('/:id', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
+    const { title, artist } = req.body;
+    if (!title || !title.trim()) return res.status(400).json({ error: 'Title is required' });
+    if (!artist || !artist.trim()) return res.status(400).json({ error: 'Artist is required' });
     const item = await MusicCatalog.create(req.body);
     res.status(201).json(item);
   } catch (error) { res.status(500).json({ error: error.message }); }

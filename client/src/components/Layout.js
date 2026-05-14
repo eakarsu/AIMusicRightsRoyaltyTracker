@@ -19,6 +19,7 @@ const menuItems = [
     { path: '/ai/forecasting', label: 'Royalty Forecasting', icon: '🔮' },
     { path: '/ai/contract-analysis', label: 'Contract Analysis', icon: '🤖' },
     { path: '/ai/market-trends', label: 'Market Trends', icon: '📉' },
+    { path: '/ai-tools', label: 'AI Tools (Sampling/Metadata/Licensing)', icon: '🛠️' },
   ]}
 ];
 

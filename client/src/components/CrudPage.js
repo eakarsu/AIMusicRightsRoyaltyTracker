@@ -1,26 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
-export default function CrudPage({ title, icon, api, columns, formFields, defaultValues = {} }) {
+export default function CrudPage({ title, icon, api, columns, formFields, defaultValues = {}, extraActions }) {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+  const LIMIT = 20;
 
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (p = page) => {
     try {
-      const { data } = await api.getAll();
-      setItems(data);
+      const { data } = await api.getAll(p, LIMIT);
+      if (data.data) {
+        setItems(data.data);
+        setPagination({ total: data.total, totalPages: data.totalPages });
+      } else {
+        setItems(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page]);
 
-  useEffect(() => { fetchItems(); }, [fetchItems]);
+  useEffect(() => { fetchItems(1); setPage(1); }, [api]);
 
   const handleRowClick = async (item) => {
     try {
@@ -125,9 +133,12 @@ export default function CrudPage({ title, icon, api, columns, formFields, defaul
       <div className="page-header">
         <div>
           <h1>{icon} {title}</h1>
-          <p>Manage and track all {title.toLowerCase()}</p>
+          <p>Manage and track all {title.toLowerCase()} ({pagination.total} total)</p>
         </div>
-        <button className="btn btn-primary" onClick={handleNew}>+ New {title.replace(/s$/, '')}</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {extraActions}
+          <button className="btn btn-primary" onClick={handleNew}>+ New {title.replace(/s$/, '')}</button>
+        </div>
       </div>
 
       {loading ? (
@@ -156,6 +167,22 @@ export default function CrudPage({ title, icon, api, columns, formFields, defaul
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {pagination.totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 16, padding: '12px 0' }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => { const p = page - 1; setPage(p); fetchItems(p); }}
+            disabled={page <= 1}
+          >← Prev</button>
+          <span style={{ color: '#94a3b8', fontSize: 14 }}>Page {page} of {pagination.totalPages}</span>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => { const p = page + 1; setPage(p); fetchItems(p); }}
+            disabled={page >= pagination.totalPages}
+          >Next →</button>
         </div>
       )}
 

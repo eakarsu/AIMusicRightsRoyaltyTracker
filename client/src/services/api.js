@@ -31,7 +31,7 @@ export const authAPI = {
 };
 
 export const catalogAPI = {
-  getAll: () => api.get('/catalog'),
+  getAll: (page = 1, limit = 20) => api.get(`/catalog?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/catalog/${id}`),
   create: (data) => api.post('/catalog', data),
   update: (id, data) => api.put(`/catalog/${id}`, data),
@@ -39,19 +39,21 @@ export const catalogAPI = {
 };
 
 export const licensesAPI = {
-  getAll: () => api.get('/licenses'),
+  getAll: (page = 1, limit = 20) => api.get(`/licenses?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/licenses/${id}`),
   create: (data) => api.post('/licenses', data),
   update: (id, data) => api.put(`/licenses/${id}`, data),
   delete: (id) => api.delete(`/licenses/${id}`),
+  checkConflicts: (data) => api.post('/licenses/check-conflicts', data),
 };
 
 export const royaltiesAPI = {
-  getAll: () => api.get('/royalties'),
+  getAll: (page = 1, limit = 20) => api.get(`/royalties?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/royalties/${id}`),
   create: (data) => api.post('/royalties', data),
   update: (id, data) => api.put(`/royalties/${id}`, data),
   delete: (id) => api.delete(`/royalties/${id}`),
+  importCSV: (formData) => api.post('/royalties/import-csv', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 export const platformsAPI = {
@@ -97,6 +99,12 @@ export const aiAPI = {
   royaltyForecasting: (data) => api.post('/ai/royalty-forecasting', data),
   contractAnalysis: (data) => api.post('/ai/contract-analysis', data),
   marketTrends: (data) => api.post('/ai/market-trends', data),
+  // Apply pass 5
+  royaltySettlement: (data) => api.post('/ai/royalty-settlement', data),
+  copyrightTracking: (data) => api.post('/ai/copyright-tracking', data),
+  mechanicalLicensing: (data) => api.post('/ai/mechanical-licensing', data),
+  proTracking: (data) => api.post('/ai/pro-tracking', data),
+  catalogAcquisitionAdvisor: (data) => api.post('/ai/catalog-acquisition-advisor', data),
 };
 
 export default api;

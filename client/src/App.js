@@ -12,6 +12,7 @@ import ArtistsPage from './pages/ArtistsPage';
 import ContractsPage from './pages/ContractsPage';
 import PaymentsPage from './pages/PaymentsPage';
 import AIPage from './pages/AIPage';
+import AIToolsPage from './pages/AIToolsPage';
 import Layout from './components/Layout';
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
           <Route path="/artists" element={<ArtistsPage />} />
           <Route path="/contracts" element={<ContractsPage />} />
           <Route path="/payments" element={<PaymentsPage />} />
+          <Route path="/ai-tools" element={<AIToolsPage />} />
           <Route path="/ai/:feature" element={<AIPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
