@@ -15,6 +15,9 @@ import AIPage from './pages/AIPage';
 import AIToolsPage from './pages/AIToolsPage';
 import Layout from './components/Layout';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
 function App() {
   const [isAuth, setIsAuth] = useState(!!localStorage.getItem('token'));
 
@@ -36,6 +39,9 @@ function App() {
       <>
         <Router>
           <Routes>
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
             <Route path="*" element={<Login onLogin={handleLogin} />} />
           </Routes>
         </Router>
