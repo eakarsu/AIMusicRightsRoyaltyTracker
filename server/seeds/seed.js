@@ -4,14 +4,22 @@ const { User, MusicCatalog, RightsLicense, RoyaltyCalculation, PlatformIntegrati
 
 async function seed() {
   try {
+    if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_SEED !== 'true') {
+      throw new Error('Destructive demo seeding requires non-production NODE_ENV and ALLOW_DEMO_SEED=true');
+    }
+    const adminEmail = (process.env.SEED_ADMIN_EMAIL || '').trim().toLowerCase();
+    const demoPassword = process.env.SEED_DEMO_PASSWORD || '';
+    if (!adminEmail || demoPassword.length < 12) {
+      throw new Error('SEED_ADMIN_EMAIL and a 12+ character SEED_DEMO_PASSWORD are required');
+    }
     await sequelize.authenticate();
     console.log('Database connected.');
     await sequelize.sync({ force: true });
     console.log('Tables created.');
 
     // Users
-    await User.create({ email: 'admin@musicrights.com', password: 'password123', name: 'Admin User', role: 'admin' });
-    await User.create({ email: 'manager@musicrights.com', password: 'password123', name: 'Sarah Johnson', role: 'manager' });
+    await User.create({ email: adminEmail, password: demoPassword, name: 'Admin User', role: 'admin' });
+    await User.create({ email: 'manager@musicrights.invalid', password: demoPassword, name: 'Sarah Johnson', role: 'manager' });
     console.log('Users seeded.');
 
     // Music Catalog (15 items)
@@ -162,9 +170,7 @@ async function seed() {
     console.log('Payments seeded (15 items).');
 
     console.log('\n✅ All data seeded successfully!');
-    console.log('Login credentials:');
-    console.log('  Email: admin@musicrights.com');
-    console.log('  Password: password123');
+    console.log(`Demo admin seeded: ${adminEmail} (password not logged)`);
     process.exit(0);
   } catch (error) {
     console.error('Seed error:', error);
