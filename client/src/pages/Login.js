@@ -9,8 +9,8 @@ export default function Login({ onLogin }) {
   const [error, setError] = useState('');
 
   const handleAutoFill = () => {
-    setEmail('admin@musicrights.com');
-    setPassword('password123');
+    setEmail(process.env.REACT_APP_DEMO_EMAIL || '');
+    setPassword(process.env.REACT_APP_DEMO_PASSWORD || '');
   };
 
   const handleSubmit = async (e) => {
