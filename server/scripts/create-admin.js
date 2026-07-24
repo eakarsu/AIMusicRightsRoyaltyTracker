@@ -2,6 +2,8 @@
 
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
+const fs = require('fs');
+const path = require('path');
 
 async function main() {
   if (process.env.BOOTSTRAP_ACKNOWLEDGEMENT !== 'create-initial-admin') {
@@ -10,11 +12,15 @@ async function main() {
   const email = (process.env.PROVISION_ADMIN_EMAIL || '').trim().toLowerCase();
   const password = process.env.PROVISION_ADMIN_PASSWORD || '';
   const name = (process.env.PROVISION_ADMIN_NAME || '').trim();
-  const organizationName = (process.env.BOOTSTRAP_TENANT_NAME || '').trim();
+  const organizationName = (process.env.BOOTSTRAP_TENANT_NAME || 'Runtime Verification').trim();
   if (!email || !name || !organizationName || password.length < 12) {
     throw new Error('Admin email, name, organization, and a 12+ character password are required');
   }
 
+  const migrationDirectory = path.join(__dirname, '..', 'migrations');
+  for (const name of fs.readdirSync(migrationDirectory).filter((item) => item.endsWith('.sql')).sort()) {
+    await pool.query(fs.readFileSync(path.join(migrationDirectory, name), 'utf8'));
+  }
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -26,11 +32,16 @@ async function main() {
       organization = await client.query('INSERT INTO royalty_organizations (name) VALUES ($1) RETURNING id', [organizationName]);
     }
     let user = await client.query('SELECT id FROM users WHERE lower(email) = $1 FOR UPDATE', [email]);
+    const hash = await bcrypt.hash(password, 12);
     if (!user.rows.length) {
-      const hash = await bcrypt.hash(password, 12);
       user = await client.query(
         'INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4) RETURNING id',
         [email, hash, name, 'admin']
+      );
+    } else {
+      await client.query(
+        'UPDATE users SET password=$1,name=$2,role=$3,"updatedAt"=NOW() WHERE id=$4',
+        [hash, name, 'admin', user.rows[0].id]
       );
     }
     await client.query(

@@ -7,6 +7,7 @@ const {
   validateContract, validateOverride, validateStatement
 } = require('../domain/royaltyPolicy');
 const { providerReadiness, requireProviders } = require('../services/providerBoundary');
+const { callOpenRouter } = require('../services/openRouterService');
 
 module.exports = function buildGovernedRoyaltyRouter(authenticateToken) {
   const router = express.Router();
@@ -47,6 +48,20 @@ module.exports = function buildGovernedRoyaltyRouter(authenticateToken) {
   router.get('/providers/readiness', roles('auditor', 'admin', 'royalty_accountant'), (_req, res) => {
     const readiness = providerReadiness();
     res.status(readiness.ready ? 200 : 503).json(readiness);
+  });
+
+  router.post('/catalog-advisor', roles('rights_reviewer', 'royalty_accountant', 'admin'), async (req, res) => {
+    try {
+      const { catalogSummary, objective } = req.body || {};
+      if (!String(catalogSummary || '').trim()) return res.status(422).json({ error: 'catalogSummary is required' });
+      const result = await callOpenRouter(
+        'You are a music-rights and royalty analyst. Give conservative, evidence-aware catalog recommendations and return JSON.',
+        `Catalog summary: ${catalogSummary}\nObjective: ${objective || 'identify rights, revenue, and diligence priorities'}\nReturn JSON with summary, rights_risks, royalty_opportunities, diligence_steps, and assumptions.`
+      );
+      res.json({ feature: 'Governed Catalog Advisor', ...result });
+    } catch (error) {
+      res.status(502).json({ error: error.message });
+    }
   });
 
   router.post('/integrations/:provider/reconciliation', roles('data_operator', 'royalty_accountant', 'auditor', 'admin'), async (req, res) => {

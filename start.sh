@@ -2,6 +2,11 @@
 set -Eeuo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
+[[ -f .env ]] || { echo "Missing required file: .env" >&2; exit 1; }
+set -a
+source ./.env
+set +a
 SERVER_PORT="${SERVER_PORT:?SERVER_PORT is required}"
 CLIENT_PORT="${CLIENT_PORT:?CLIENT_PORT is required}"
 JWT_SECRET_VALUE="${JWT_SECRET:-}"
@@ -32,9 +37,13 @@ for port in "$SERVER_PORT" "$CLIENT_PORT"; do
   fi
 done
 
+if [[ "${ALLOW_SCHEMA_MIGRATION:-false}" == "true" ]]; then
+  node server/scripts/create-admin.js
+fi
+
 (cd "$PROJECT_DIR/server" && SERVER_PORT="$SERVER_PORT" npm start) &
 server_pid=$!
-(cd "$PROJECT_DIR/client" && BROWSER=none PORT="$CLIENT_PORT" npm start) &
+(cd "$PROJECT_DIR/client" && BROWSER=none CI=true PORT="$CLIENT_PORT" REACT_APP_API_BASE="http://127.0.0.1:$SERVER_PORT/api" npm start) &
 client_pid=$!
 
 cleanup() {

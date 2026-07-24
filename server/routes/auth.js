@@ -31,6 +31,19 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/me', authenticateToken, (req, res) => res.json({ user: req.user }));
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.id,u.email,u.name,m.tenant_id AS "tenantId",m.role
+       FROM users u JOIN royalty_tenant_memberships m ON m.user_id=u.id AND m.active=TRUE
+       WHERE u.id=$1 AND m.tenant_id=$2 LIMIT 1`,
+      [req.user.id, req.user.tenantId]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    res.json({ user: result.rows[0] });
+  } catch (_) {
+    res.status(503).json({ error: 'Authentication service unavailable' });
+  }
+});
 
 module.exports = router;

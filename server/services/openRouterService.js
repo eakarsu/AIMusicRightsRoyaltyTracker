@@ -1,8 +1,6 @@
 const fetch = require('node-fetch');
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-
 async function callOpenRouter(systemPrompt, userPrompt) {
   if (!process.env.OPENROUTER_API_KEY) {
     const err = new Error('AI not configured. Set OPENROUTER_API_KEY to enable AI features.');
@@ -10,7 +8,8 @@ async function callOpenRouter(systemPrompt, userPrompt) {
     err.missing = 'OPENROUTER_API_KEY';
     throw err;
   }
-  const response = await fetch(OPENROUTER_API_URL, {
+  const baseUrl = (process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -29,11 +28,13 @@ async function callOpenRouter(systemPrompt, userPrompt) {
     })
   });
 
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(data.error.message || 'OpenRouter API error');
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.error) {
+    throw new Error(data.error?.message || `OpenRouter HTTP ${response.status}`);
   }
-  return data;
+  const content = data.choices?.[0]?.message?.content;
+  if (!content || !String(content).trim()) throw new Error('OpenRouter returned empty content');
+  return { content, model: data.model, usage: data.usage };
 }
 
 module.exports = { callOpenRouter };
