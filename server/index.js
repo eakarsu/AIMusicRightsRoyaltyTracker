@@ -18,6 +18,14 @@ app.use(express.json({ limit: '2mb' }));
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'governed-music-rights-royalties' }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/governed-royalties', require('./routes/governedRoyalties')(authenticateToken));
+
+// Advisory AI reports only; native execution and approval routes stay unchanged.
+const aiWorkspaceSupport = require("./aiWorkspaceAdapters.cjs");
+const aiWorkspaceDatabase = require("./db.js");
+app.use('/api/report-workspace', require("./aiWorkspace.cjs").createAIWorkspaceRouter({
+  pool: aiWorkspaceDatabase, authenticateToken: require("./middleware/auth.js").authenticateToken,
+  aiRateLimiter: aiWorkspaceSupport.createWorkspaceLimiter(), features: require("./aiWorkspaceFeatures.json"),
+}));
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
 
 const port = Number(process.env.SERVER_PORT);

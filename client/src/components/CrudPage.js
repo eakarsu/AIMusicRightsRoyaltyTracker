@@ -1,3 +1,5 @@
+import RecordDialog from './RecordDialog';
+import { AIResultValue } from './AIResultView';
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
@@ -95,9 +97,9 @@ export default function CrudPage({ title, icon, api, columns, formFields, defaul
     return String(value);
   };
 
-  if (selected) {
+  if (selected && !showForm) {
     return (
-      <div>
+      <RecordDialog title={title} onClose={() => setSelected(null)}><div>
         <button className="back-btn" onClick={() => setSelected(null)}>← Back to list</button>
         <div className="detail-panel">
           <div className="detail-header">
@@ -124,7 +126,7 @@ export default function CrudPage({ title, icon, api, columns, formFields, defaul
             ))}
           </div>
         </div>
-      </div>
+      </div></RecordDialog>
     );
   }
 
@@ -159,7 +161,7 @@ export default function CrudPage({ title, icon, api, columns, formFields, defaul
             </thead>
             <tbody>
               {items.map(item => (
-                <tr key={item.id} onClick={() => handleRowClick(item)}>
+                <tr key={item.id} onClick={() => handleRowClick(item)} tabIndex={0} onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) { event.preventDefault(); (() => handleRowClick(item))(event); } }}>
                   {columns.map(col => (
                     <td key={col.key}>{formatValue(item[col.key], col)}</td>
                   ))}

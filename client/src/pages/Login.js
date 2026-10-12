@@ -11,7 +11,10 @@ export default function Login({ onLogin }) {
   const handleAutoFill = () => {
     setEmail(process.env.REACT_APP_DEMO_EMAIL || '');
     setPassword(process.env.REACT_APP_DEMO_PASSWORD || '');
+    setError('');
   };
+  const demoAvailable = process.env.REACT_APP_ENABLE_DEMO_CREDENTIAL_AUTOFILL === 'true' &&
+    Boolean(process.env.REACT_APP_DEMO_EMAIL && process.env.REACT_APP_DEMO_PASSWORD);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,9 +42,9 @@ export default function Login({ onLogin }) {
           <p>Royalty & Rights Management Platform</p>
         </div>
         {error && <div className="error-msg">{error}</div>}
-        <button className="auto-fill-btn" onClick={handleAutoFill} type="button">
-          Auto Fill Demo Credentials
-        </button>
+        {demoAvailable ? <button className="auto-fill-btn" onClick={handleAutoFill} type="button">
+          Fill demo credentials
+        </button> : <p className="login-demo-notice">Demo credentials are not configured. Sign in with your existing account.</p>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email Address</label>

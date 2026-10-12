@@ -93,18 +93,18 @@ export const dashboardAPI = {
 };
 
 export const aiAPI = {
-  plagiarismDetection: (data) => api.post('/ai/plagiarism-detection', data),
-  catalogValuation: (data) => api.post('/ai/catalog-valuation', data),
-  rightsClearance: (data) => api.post('/ai/rights-clearance', data),
-  royaltyForecasting: (data) => api.post('/ai/royalty-forecasting', data),
-  contractAnalysis: (data) => api.post('/ai/contract-analysis', data),
-  marketTrends: (data) => api.post('/ai/market-trends', data),
+  plagiarismDetection: (data, options = {}) => api.post('/ai/plagiarism-detection', data, options),
+  catalogValuation: (data, options = {}) => api.post('/ai/catalog-valuation', data, options),
+  rightsClearance: (data, options = {}) => api.post('/ai/rights-clearance', data, options),
+  royaltyForecasting: (data, options = {}) => api.post('/ai/royalty-forecasting', data, options),
+  contractAnalysis: (data, options = {}) => api.post('/ai/contract-analysis', data, options),
+  marketTrends: (data, options = {}) => api.post('/ai/market-trends', data, options),
   // Apply pass 5
-  royaltySettlement: (data) => api.post('/ai/royalty-settlement', data),
-  copyrightTracking: (data) => api.post('/ai/copyright-tracking', data),
-  mechanicalLicensing: (data) => api.post('/ai/mechanical-licensing', data),
-  proTracking: (data) => api.post('/ai/pro-tracking', data),
-  catalogAcquisitionAdvisor: (data) => api.post('/ai/catalog-acquisition-advisor', data),
+  royaltySettlement: (data, options = {}) => api.post('/ai/royalty-settlement', data, options),
+  copyrightTracking: (data, options = {}) => api.post('/ai/copyright-tracking', data, options),
+  mechanicalLicensing: (data, options = {}) => api.post('/ai/mechanical-licensing', data, options),
+  proTracking: (data, options = {}) => api.post('/ai/pro-tracking', data, options),
+  catalogAcquisitionAdvisor: (data, options = {}) => api.post('/ai/catalog-acquisition-advisor', data, options),
 };
 
 export default api;

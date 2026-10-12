@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import AIFieldPresets, { completeExample } from './AIFieldPresets';
+import AIResultView from './AIResultView';
+import useCancelableAI from './useCancelableAI';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { aiAPI } from '../services/api';
+import { aiAPI, catalogAPI, contractsAPI } from '../services/api';
 import AIResultDisplay from '../components/AIResultDisplay';
 import StructuredAIDisplay from '../components/StructuredAIDisplay';
 import { toast } from 'react-toastify';
@@ -72,15 +75,42 @@ const aiFeatures = {
     ]
   }
 };
+const featureSamples = {
+  plagiarism: [
+    { label: 'Lyric overlap', values: { songTitle: 'Midnight Drive', artist: 'The Northline', lyrics: 'City lights fade as the road winds home', melody: 'Midtempo 4/4, minor-key verse, rising four-chord chorus' } },
+    { label: 'Melody review', values: { songTitle: 'Harbor Lights', artist: 'Mira Lane', lyrics: 'We watched the harbor turn to gold', melody: 'Slow 6/8 acoustic ballad with a descending chorus phrase' } },
+    { label: 'Release review', values: { songTitle: 'Blue Hour', artist: 'Mira Lane', lyrics: 'At blue hour the streets begin to glow', melody: 'Upbeat 4/4 synth pop with syncopated bass and repeating hook' } },
+  ],
+  clearance: [
+    { label: 'Indie film', values: { songTitle: 'Harbor Lights', usageType: 'Film/TV Sync', territory: 'North America', licensee: 'Independent film producer' } },
+    { label: 'Podcast theme', values: { songTitle: 'Midnight Drive', usageType: 'Commercial', territory: 'United States', licensee: 'Regional podcast network' } },
+    { label: 'Live performance', values: { songTitle: 'Blue Hour', usageType: 'Live Performance', territory: 'Europe', licensee: 'Touring venue operator' } },
+  ],
+  forecasting: [
+    { label: 'Streaming quarter', values: { songTitle: 'Harbor Lights', platform: 'Spotify', period: '3 months' } },
+    { label: 'Annual catalog', values: { songTitle: 'Midnight Drive', platform: 'Apple Music', period: '12 months' } },
+    { label: 'Long range', values: { songTitle: 'Blue Hour', platform: 'YouTube Music', period: '24 months' } },
+  ],
+};
 
 export default function AIPage() {
   const { feature } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({});
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const aiRequest = useCancelableAI();
+  const { result, setResult: setResult, loading, error } = aiRequest;
+
 
   const config = aiFeatures[feature];
+  const [referenceRows, setReferenceRows] = useState([]);
+  const referenceFields = (config?.fields || []).map((field) => ['catalogId', 'contractId'].includes(field.key) ? { ...field, type: 'select', requiresExistingRecord: true, options: referenceRows.map((row) => ({ value: String(row.id), label: row.title || row.song_title || row.name || row.contract_type || String(row.id) })) } : field);
+  useEffect(() => {
+    let active = true; aiRequest.cancel(); setFormData({}); setResult(null); aiRequest.setError(null); setReferenceRows([]);
+    const source = feature === 'valuation' ? catalogAPI : feature === 'contract-analysis' ? contractsAPI : null;
+    if (source) source.getAll(1, 100).then((response) => { if (!active) return; const rows = response.data?.data || response.data?.items || response.data; setReferenceRows(Array.isArray(rows) ? rows : []); }).catch(() => { if (active) setReferenceRows([]); });
+    return () => { active = false; };
+    // eslint-disable-next-line
+  }, [feature]);
   if (!config) {
     return (
       <div className="empty-state">
@@ -96,19 +126,7 @@ export default function AIPage() {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setResult(null);
-    try {
-      const { data } = await config.apiCall(formData);
-      setResult(data);
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'AI analysis failed. Check your OpenRouter API key.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleSubmit = async (event) => { event?.preventDefault?.(); return aiRequest.run(async (options) => (await config.apiCall(formData, options)).data); };
 
   return (
     <div>
@@ -123,14 +141,17 @@ export default function AIPage() {
 
       <div className="detail-panel">
         <form onSubmit={handleSubmit}>
+          <AIFieldPresets fields={referenceFields} samples={featureSamples[feature] || []} context={config.title} disabled={loading} onFill={(sample, index) => { setFormData(completeExample(referenceFields, sample, index, config.title, formData)); aiRequest.setResult(null); aiRequest.setError(null); }} />
+          {aiRequest.notice && <div className="sr-notice" role="status">{aiRequest.notice}</div>}
+
           <div style={{ display: 'grid', gridTemplateColumns: config.fields.length > 2 ? '1fr 1fr' : '1fr', gap: 16 }}>
-            {config.fields.map(field => (
+            {referenceFields.map(field => (
               <div className="form-group" key={field.key} style={field.type === 'textarea' ? { gridColumn: '1 / -1' } : {}}>
                 <label>{field.label}</label>
                 {field.type === 'select' ? (
                   <select value={formData[field.key] || ''} onChange={e => handleChange(field.key, e.target.value)}>
                     <option value="">Select...</option>
-                    {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    {field.options.map(opt => <option key={typeof opt === 'object' ? opt.value : opt} value={typeof opt === 'object' ? opt.value : opt}>{typeof opt === 'object' ? opt.label : opt}</option>)}
                   </select>
                 ) : field.type === 'textarea' ? (
                   <textarea
@@ -155,11 +176,7 @@ export default function AIPage() {
             <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
               {loading ? '🔄 Analyzing...' : '🤖 Run AI Analysis'}
             </button>
-            {result && (
-              <button type="button" className="btn btn-secondary btn-lg" onClick={() => { setResult(null); setFormData({}); }}>
-                Clear Results
-              </button>
-            )}
+          {loading && <button type="button" className="btn btn-secondary" onClick={aiRequest.cancel}>Cancel</button>}
           </div>
         </form>
       </div>
@@ -167,7 +184,7 @@ export default function AIPage() {
       {result?.structured ? (
         <StructuredAIDisplay result={result} feature={feature} loading={loading} />
       ) : (
-        <AIResultDisplay result={result} loading={loading} />
+        <AIResultView result={result} loading={loading} error={error} title={config.title} />
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import ReadableAIReport from "./AIResultView";
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -94,7 +95,7 @@ function ContractAnalysis({ structured }) {
           <h4 style={{ color: '#e74c3c', marginBottom: 8, fontSize: 14 }}>🚩 Red Flags</h4>
           {structured.red_flags.map((flag, i) => (
             <div key={i} style={{ padding: '8px 12px', background: 'rgba(231,76,60,0.08)', borderLeft: '3px solid #e74c3c', borderRadius: '0 6px 6px 0', marginBottom: 6, fontSize: 13, color: '#e2e8f0' }}>
-              {typeof flag === 'string' ? flag : JSON.stringify(flag)}
+              <ReadableAIReport result={flag} />
             </div>
           ))}
         </div>
@@ -104,7 +105,7 @@ function ContractAnalysis({ structured }) {
           <h4 style={{ color: '#27ae60', marginBottom: 8, fontSize: 14 }}>💡 Negotiation Opportunities</h4>
           {structured.negotiation_opportunities.map((op, i) => (
             <div key={i} style={{ padding: '8px 12px', background: 'rgba(39,174,96,0.08)', borderLeft: '3px solid #27ae60', borderRadius: '0 6px 6px 0', marginBottom: 6, fontSize: 13, color: '#e2e8f0' }}>
-              {typeof op === 'string' ? op : JSON.stringify(op)}
+              <ReadableAIReport result={op} />
             </div>
           ))}
         </div>
@@ -114,7 +115,7 @@ function ContractAnalysis({ structured }) {
           <h4 style={{ color: '#a29bfe', marginBottom: 8, fontSize: 14 }}>📋 Key Terms</h4>
           {structured.key_terms.map((term, i) => (
             <div key={i} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, marginBottom: 6, fontSize: 13, color: '#e2e8f0' }}>
-              {typeof term === 'string' ? term : Object.entries(term).map(([k, v]) => `${k}: ${v}`).join(' | ')}
+              {typeof term === 'string' ? term : <ReadableAIReport result={term} />}
             </div>
           ))}
         </div>
@@ -207,10 +208,8 @@ export default function StructuredAIDisplay({ result, feature, loading }) {
         )}
 
         {/* Generic structured display */}
-        {!['forecasting', 'contract-analysis', 'valuation', 'plagiarism'].includes(feature) && structured && (
-          <pre style={{ color: '#94a3b8', fontSize: 12, background: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 8, overflow: 'auto' }}>
-            {JSON.stringify(structured, null, 2)}
-          </pre>
+        {structured && (
+          <ReadableAIReport result={structured} />
         )}
       </div>
       {usage && (
