@@ -8,7 +8,14 @@ router.get('/', auth, async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, parseInt(req.query.limit) || 20);
     const offset = (page - 1) * limit;
+    const { Op } = require('sequelize');
+    const where = {};
+    const q = String(req.query.q || req.query.search || '').trim();
+    if (q) where[Op.or] = [{ title: { [Op.iLike]: `%${q}%` } }, { artist: { [Op.iLike]: `%${q}%` } }, { album: { [Op.iLike]: `%${q}%` } }];
+    if (req.query.status) where.status = req.query.status;
+    if (req.query.genre) where.genre = req.query.genre;
     const { count, rows } = await MusicCatalog.findAndCountAll({
+      where,
       order: [['createdAt', 'DESC']],
       limit,
       offset

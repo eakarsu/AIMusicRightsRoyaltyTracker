@@ -26,6 +26,7 @@ app.use('/api/report-workspace', require("./aiWorkspace.cjs").createAIWorkspaceR
   pool: aiWorkspaceDatabase, authenticateToken: require("./middleware/auth.js").authenticateToken,
   aiRateLimiter: aiWorkspaceSupport.createWorkspaceLimiter(), features: require("./aiWorkspaceFeatures.json"),
 }));
+app.use('/api/fp', require('./routes/fpWave40')({ authenticateToken }));
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
 
 const port = Number(process.env.SERVER_PORT);
